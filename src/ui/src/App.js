@@ -1,26 +1,67 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, {Component} from 'react';
+import {Route, Switch, Redirect, Link} from "react-router-dom";
+import Login from "./components/Login";
+import AuthStore from "./components/AuthStore";
+import Home from "./components/Home";
+import CreateAccount from "./components/CreateAccount";
+import axios from "axios/index";
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+class App extends Component {
+
+    logout = (event) => {
+        event.preventDefault();
+        AuthStore.removeToken();
+        this.setState({});
+    };
+
+    componentWillMount() {
+        axios.defaults.timeout = 10000;
+        axios.defaults.headers.common['Authorization'] = `Bearer ${AuthStore.getToken()}`;
+    }
+
+    render() {
+        function PrivateRoute({component: Component, ...rest}) {
+            return (
+                <Route
+                    {...rest}
+                    render={(props) => AuthStore.isLoggedIn()
+                        ? <Component {...props}/>
+                        : <Redirect to={{pathname: '/login'}}/>}/>
+            );
+        }
+
+        const logout = <button className="link-button nav-link" onClick={this.logout}> Logout</button>;
+
+        return (
+            <div className='h-100'>
+                <nav className="navbar fixed-top navbar-expand-lg navbar-light bg-light">
+                    <div className="navbar-brand">MinViableWebApp</div>
+                    <div className="collapse navbar-collapse" id="navbarSupportedContent">
+                        <ul className="navbar-nav mr-auto">
+                            <li className="nav-item active">
+                                <Link to="/" className="nav-link">Home</Link>
+                            </li>
+                        </ul>
+                        <ul className="nav navbar-nav navbar-right">
+                            <li className="nav-item active">
+                                {AuthStore.isLoggedIn() && logout}
+                            </li>
+                        </ul>
+
+                    </div>
+                </nav>
+                <div className='h-100'>
+
+                    <Switch>
+                        <Route path="/login" component={Login}/>
+                        <Route path="/create" component={CreateAccount}/>
+                        <PrivateRoute path="/" component={Home}/>
+                    </Switch>
+
+                </div>
+            </div>
+        );
+    }
 }
 
 export default App;
